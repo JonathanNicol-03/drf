@@ -40,13 +40,26 @@ ForestOptions::ForestOptions(uint num_trees,
                              uint samples_per_cluster,
                              size_t num_features,
                              double bandwidth,
-                             unsigned int node_scaling):
+                             unsigned int node_scaling,
+                             bool survey_mode,
+                             double honesty_probability,
+                             uint min_obs,
+                             double max_weight_ratio,
+                             uint max_depth):
     ci_group_size(ci_group_size),
     sample_fraction(sample_fraction),
-    tree_options(mtry, min_node_size, honesty, honesty_fraction, honesty_prune_leaves, alpha, imbalance_penalty, num_features, bandwidth, node_scaling),
+    tree_options(mtry, min_node_size, honesty, honesty_fraction,
+           honesty_prune_leaves, alpha, imbalance_penalty, num_features,
+           bandwidth, node_scaling, survey_mode, honesty_probability,
+           min_obs, max_weight_ratio, max_depth),
     sampling_options(samples_per_cluster, sample_clusters) {
 
   this->num_threads = validate_num_threads(num_threads);
+
+  if (survey_mode && ci_group_size != 1) {
+    throw std::runtime_error(
+        "SDRF Algorithm 1 requires ci_group_size = 1.");
+  }
 
   // If necessary, round the number of trees up to a multiple of
   // the confidence interval group size.

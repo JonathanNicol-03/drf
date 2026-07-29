@@ -16,6 +16,7 @@
  #-------------------------------------------------------------------------------*/
 
 #include <iterator>
+#include <stdexcept>
 #include "sampling/RandomSampler.h"
 
 #include "tree/Tree.h"
@@ -29,14 +30,16 @@ Tree::Tree(size_t root_node,
            const std::vector<size_t>& split_vars,
            const std::vector<double>& split_values,
            const std::vector<size_t>& drawn_samples,
-           const PredictionValues& prediction_values) :
+           const PredictionValues& prediction_values,
+           const std::vector<std::vector<double>>& leaf_sample_weights) :
     root_node(root_node),
     child_nodes(child_nodes),
     leaf_samples(leaf_samples),
     split_vars(split_vars),
     split_values(split_values),
     drawn_samples(drawn_samples),
-    prediction_values(prediction_values) {}
+    prediction_values(prediction_values),
+    leaf_sample_weights(leaf_sample_weights) {}
 
 size_t Tree::get_root_node() const {
   return root_node;
@@ -48,6 +51,10 @@ const std::vector<std::vector<size_t>>& Tree::get_child_nodes() const {
 
 const std::vector<std::vector<size_t>>& Tree::get_leaf_samples() const {
   return leaf_samples;
+}
+
+const std::vector<std::vector<double>>& Tree::get_leaf_sample_weights() const {
+  return leaf_sample_weights;
 }
 
 const std::vector<size_t>& Tree::get_split_vars() const  {
@@ -98,6 +105,23 @@ std::vector<size_t> Tree::find_leaf_nodes(const Data& data,
 
 void Tree::set_leaf_samples(const std::vector<std::vector<size_t>>& leaf_samples) {
   this->leaf_samples = leaf_samples;
+}
+
+void Tree::set_leaf_sample_weights(
+    const std::vector<std::vector<double>>& weights) {
+  if (!weights.empty() && weights.size() != leaf_samples.size()) {
+    throw std::invalid_argument(
+        "Leaf sample weights must have one vector per tree node.");
+  }
+  if (!weights.empty()) {
+    for (size_t node = 0; node < weights.size(); ++node) {
+      if (weights[node].size() != leaf_samples[node].size()) {
+        throw std::invalid_argument(
+            "Leaf sample IDs and leaf sample weights must be aligned.");
+      }
+    }
+  }
+  leaf_sample_weights = weights;
 }
 
 void Tree::set_prediction_values(const PredictionValues& prediction_values) {

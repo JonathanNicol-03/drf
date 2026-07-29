@@ -4,6 +4,8 @@
 
 A package for forest-based conditional distribution estimation of a possibly multivariate response. The estimated distribution is in a simple form which allows for simple and fast computation of different functionals of the conditional distributions such as, for example, conditional quantiles, conditional correlations or conditional probability statements. One can do a heterogeneity adjustment with DRF by obtaining the weighting function which describes the relevance of each training point for a given test point and which can further be used as an input to some other method.
 
+This branch also implements root-level PSU-honest Survey-calibrated Distributional Random Forest Algorithm 1, global Gaussian/product-Laplacian RFF preprocessing, and rolling-window HPC helpers. See [SDRF_HPC_GUIDE.md](SDRF_HPC_GUIDE.md) for method scope, survey inputs, installation, Hypatia job templates, storage planning, worked examples, outer-sample evaluation, and code provenance.
+
 This repository started as a fork from the [grf](https://github.com/grf-labs/grf) repository, which is itself forked from [ranger](https://github.com/imbs-hl/ranger) repository. We sincerely thank the authors of both repositories for their useful and free packages.
 
 ### Installation

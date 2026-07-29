@@ -68,9 +68,14 @@ bool RegressionSplittingRule::find_best_split(const Data& data,
                                               size_t node,
                                               const std::vector<size_t>& possible_split_vars,
                                               std::vector<std::vector<double>>& responses_by_sample, // std::vector<double> -> std::vector<std::vector<double>> 
+                                              const std::vector<double>& sample_weights,
                                               const std::vector<std::vector<size_t>>& samples,
                                               std::vector<size_t>& split_vars,
                                               std::vector<double>& split_values) {
+
+  // CART is retained only as the legacy DRF path. Survey-calibrated SDRF uses
+  // Fourier-MMD exclusively, so per-tree design weights are not consumed here.
+  (void) sample_weights;
 
   size_t size_node = samples[node].size();
   size_t min_child_size = std::max<size_t>(std::ceil(size_node * alpha), 1uL);

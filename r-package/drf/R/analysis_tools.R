@@ -210,6 +210,11 @@ variable_importance <- function(forest, decay.exponent = 2, max.depth = 4) {
 #'
 #' @export
 get_sample_weights <- function(forest, newdata = NULL, estimate.uncertainty = FALSE, num.threads = NULL) {
+  if (inherits(forest, "sdrf") && is.null(newdata)) {
+    stop(
+      "SDRF does not use ordinary OOB prediction; provide outer-sample newdata."
+    )
+  }
   num.threads <- validate_num_threads(num.threads)
 
   forest.short <- forest[-which(names(forest) == "X.orig")]

@@ -1,5 +1,7 @@
 #include <Rcpp.h>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 
 #include "commons/DefaultData.h"
 #include "commons/SparseData.h"
@@ -19,6 +21,18 @@ Rcpp::List RcppUtilities::create_forest_object(Forest& forest,
 }
 
 Forest RcppUtilities::deserialize_forest(const Rcpp::List& forest_object) {
+  const int schema_version = forest_object.containsElementNamed("_schema_version")
+      ? Rcpp::as<int>(forest_object["_schema_version"])
+      : 1;
+  if (schema_version > 2) {
+    throw std::runtime_error(
+        "This forest was written by a newer incompatible drf package.");
+  }
+  const std::string forest_type =
+      forest_object.containsElementNamed("_forest_type")
+      ? Rcpp::as<std::string>(forest_object["_forest_type"])
+      : "drf";
+
   size_t ci_group_size = forest_object["_ci_group_size"];
   size_t num_variables = forest_object["_num_variables"];
 
@@ -29,6 +43,15 @@ Forest RcppUtilities::deserialize_forest(const Rcpp::List& forest_object) {
   Rcpp::List root_nodes = forest_object["_root_nodes"];
   Rcpp::List child_nodes = forest_object["_child_nodes"];
   Rcpp::List leaf_samples = forest_object["_leaf_samples"];
+    const bool has_leaf_sample_weights =
+      forest_object.containsElementNamed("_leaf_sample_weights");
+    if (forest_type == "sdrf" && !has_leaf_sample_weights) {
+      throw std::runtime_error(
+          "An SDRF forest is missing serialized survey leaf weights.");
+    }
+    Rcpp::List leaf_sample_weights = has_leaf_sample_weights
+      ? Rcpp::List(forest_object["_leaf_sample_weights"])
+      : Rcpp::List();
   Rcpp::List split_vars = forest_object["_split_vars"];
   Rcpp::List split_values = forest_object["_split_values"];
   Rcpp::List drawn_samples = forest_object["_drawn_samples"];
@@ -37,6 +60,12 @@ Forest RcppUtilities::deserialize_forest(const Rcpp::List& forest_object) {
   size_t num_types = forest_object["_pv_num_types"];
 
   for (size_t t = 0; t < num_trees; t++) {
+    std::vector<std::vector<double>> tree_leaf_sample_weights;
+    if (has_leaf_sample_weights) {
+      tree_leaf_sample_weights = Rcpp::as<std::vector<std::vector<double>>>(
+          leaf_sample_weights.at(t));
+    }
+
     trees.emplace_back(new Tree(
                          root_nodes.at(t),
                          child_nodes.at(t),
@@ -44,7 +73,8 @@ Forest RcppUtilities::deserialize_forest(const Rcpp::List& forest_object) {
                          split_vars.at(t),
                          split_values.at(t),
                          drawn_samples.at(t),
-                         PredictionValues(prediction_values.at(t), num_types)));
+                         PredictionValues(prediction_values.at(t), num_types),
+                         tree_leaf_sample_weights));
   }
 
   return Forest(trees, num_variables, ci_group_size);
@@ -52,6 +82,8 @@ Forest RcppUtilities::deserialize_forest(const Rcpp::List& forest_object) {
 
 Rcpp::List RcppUtilities::serialize_forest(Forest& forest) {
   Rcpp::List result;
+
+  result.push_back(2, "_schema_version");
 
   result.push_back(forest.get_ci_group_size(), "_ci_group_size");
   result.push_back(forest.get_num_variables(), "_num_variables");
@@ -62,17 +94,22 @@ Rcpp::List RcppUtilities::serialize_forest(Forest& forest) {
   Rcpp::List root_nodes(num_trees);
   Rcpp::List child_nodes(num_trees);
   Rcpp::List leaf_samples(num_trees);
+  Rcpp::List leaf_sample_weights(num_trees);
   Rcpp::List split_vars(num_trees);
   Rcpp::List split_values(num_trees);
   Rcpp::List drawn_samples(num_trees);
   Rcpp::List prediction_values(num_trees);
   size_t num_types = 0;
+  bool has_survey_weights = false;
 
   for (size_t t = 0; t < num_trees; t++) {
     std::unique_ptr<Tree> tree = std::move(forest.get_trees_().at(t));
     root_nodes[t] = tree->get_root_node();
     child_nodes[t] = tree->get_child_nodes();
     leaf_samples[t] = tree->get_leaf_samples();
+    leaf_sample_weights[t] = tree->get_leaf_sample_weights();
+    has_survey_weights = has_survey_weights ||
+      !tree->get_leaf_sample_weights().empty();
     split_vars[t] = tree->get_split_vars();
     split_values[t] = tree->get_split_values();
     drawn_samples[t] = tree->get_drawn_samples();
@@ -84,11 +121,13 @@ Rcpp::List RcppUtilities::serialize_forest(Forest& forest) {
   result.push_back(root_nodes, "_root_nodes");
   result.push_back(child_nodes, "_child_nodes");
   result.push_back(leaf_samples, "_leaf_samples");
+  result.push_back(leaf_sample_weights, "_leaf_sample_weights");
   result.push_back(split_vars, "_split_vars");
   result.push_back(split_values, "_split_values");
   result.push_back(drawn_samples, "_drawn_samples");
   result.push_back(prediction_values, "_pv_values");
   result.push_back(num_types, "_pv_num_types");
+  result.push_back(has_survey_weights ? "sdrf" : "drf", "_forest_type");
   return result;
 };
 

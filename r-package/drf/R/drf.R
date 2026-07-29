@@ -9,9 +9,11 @@
 #' @param num.trees Number of trees grown in the forest. Default is 3000.
 #' @param splitting.rule A character value. The type of the splitting rule used, can be either "FourierMMD" (MMD splitting criterion with FastMMD approximation for speed) or "CART" (sum of standard CART criteria over the components of Y).
 #' @param num.features A numeric value, in case of "FourierMMD", the number of random features to sample.
-#' @param bandwidth A numeric value, the bandwidth of the Gaussian kernel used in case of "FourierMMD", the value is set to NULL by default and the square root of the median heuristic is used.
+#' @param bandwidth A positive numeric kernel bandwidth used for "FourierMMD". If NULL, the square root of the median heuristic is used.
+#' @param kernel Translation-invariant kernel approximated by the random Fourier features. One of "gaussian" (the Gaussian RBF kernel using Euclidean distance) or "laplacian" (the product Laplacian kernel using L1 distance).
+#' @param rff.seed Integer seed used only to draw the global Fourier frequencies. Keeping it separate from \code{seed} makes a saved projection reproducible independently of tree scheduling.
 #' @param response.scaling A boolean value, should the responses be standardized before fitting the forest. Default is TRUE.
-#' @param node.scaling A boolean value, should the responses be standardized in every node of every tree. Default is FALSE.
+#' @param node.scaling Legacy CART-only option for standardizing responses in every node. It must be FALSE for FourierMMD because that rule uses one immutable window-level RFF projection.
 #' @param sample.weights (experimental) Weights given to an observation in estimation.
 #'                       If NULL, each observation is given the same weight. Default is NULL.
 #' @param sample.fraction Fraction of the data used to build each tree.
@@ -111,6 +113,8 @@ drf <-               function(X, Y,
                               splitting.rule = "FourierMMD",
                               num.features = 10,
                               bandwidth = NULL,
+                              kernel = c("gaussian", "laplacian"),
+                              rff.seed = seed,
                               response.scaling = TRUE,
                               node.scaling = FALSE,
                               sample.weights = NULL,
@@ -182,6 +186,14 @@ drf <-               function(X, Y,
   equalize.cluster.weights <- FALSE
   
   num.threads <- validate_num_threads(num.threads)
+
+  kernel <- match.arg(kernel)
+  if (splitting.rule == "FourierMMD" && isTRUE(node.scaling)) {
+    stop(
+      "node.scaling is incompatible with the global FourierMMD projection; ",
+      "use response.scaling instead."
+    )
+  }
   
   all.tunable.params <- c("sample.fraction", "mtry", "min.node.size", "honesty.fraction",
                           "honesty.prune.leaves", "alpha", "imbalance.penalty")
@@ -192,12 +204,18 @@ drf <-               function(X, Y,
   } else {
     Y.transformed <- Y
   }
+  if (splitting.rule == "FourierMMD" && any(!is.finite(Y.transformed))) {
+    stop(
+      "The global response transformation produced non-finite values; ",
+      "remove constant response columns or set response.scaling=FALSE."
+    )
+  }
   
   data <- create_data_matrices(X.mat, outcome = Y.transformed, sample.weights = sample.weights)
   
   # bandwidth using median heuristic by default
   if (is.null(bandwidth)) {
-    bandwidth <- sqrt(medianHeuristic(Y.transformed))
+    bandwidth <- estimate_rff_bandwidth(Y.transformed, kernel)
   }
   
   
@@ -218,9 +236,13 @@ drf <-               function(X, Y,
                seed = seed,
                num_features = num.features,
                bandwidth = bandwidth,
+               kernel = kernel,
+               rff_seed = rff.seed,
                node_scaling = ifelse(node.scaling, 1, 0))
   
   if (splitting.rule == "CART") {
+    args$kernel <- NULL
+    args$rff_seed <- NULL
     ##forest <- do.call(gini_train, c(data, args))
     forest <- do.call.rcpp(gini_train, c(data, args))
     ##forest <- do.call(gini_train, c(data, args))
@@ -238,6 +260,10 @@ drf <-               function(X, Y,
   forest[["sample.weights"]] <- sample.weights
   forest[["clusters"]] <- clusters
   forest[["equalize.cluster.weights"]] <- equalize.cluster.weights
+  forest[["rff.kernel"]] <- kernel
+  forest[["rff.bandwidth"]] <- bandwidth
+  forest[["rff.num.features"]] <- num.features
+  forest[["rff.seed"]] <- rff.seed
   forest[["tunable.params"]] <- args[all.tunable.params]
   forest[["mat.col.names"]] <- mat.col.names
   forest[["mat.col.names.df"]] <- mat.col.names.df

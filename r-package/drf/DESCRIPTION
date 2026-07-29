@@ -1,12 +1,12 @@
 Package: drf
-Title: Distributional Random Forests
-Version: 1.3.0
+Title: Distributional and Survey-Calibrated Random Forests
+Version: 1.4.0
 Authors@R: c(
   person(given = "Jeffrey", family = "Naf", email = "jeffrey.naf@unige.ch", role = "cre"),
   person(given = "Loris", family = "Michel", role = "aut"),
   person(given = "Domagoj", family = "Cevid", role = "aut"))
 BugReports: https://github.com/lorismichel/drf/issues
-Description: An implementation of distributional random forests as introduced in Cevid & Michel & Naf & Meinshausen & Buhlmann (2022) <doi:10.48550/arXiv.2005.14458>.
+Description: Implements distributional random forests as introduced in Cevid, Michel, Naf, Meinshausen, and Buhlmann (2022) <doi:10.48550/arXiv.2005.14458>, together with the root-level primary-sampling-unit-honest Survey-calibrated Distributional Random Forest Algorithm 1 described by Zou, Matabuena, and Kosorok (2026) <doi:10.48550/arXiv.2512.08179>.
 License: GPL-3
 LinkingTo: Rcpp, RcppEigen
 Depends:
@@ -20,6 +20,9 @@ Imports:
     transport
 RoxygenNote: 7.3.3
 Suggests:
-    DiagrammeR
-SystemRequirements: GNU make
+    DiagrammeR,
+    testthat (>= 3.0.0),
+    torch
+Config/testthat/edition: 3
+SystemRequirements: GNU make, C++11; CUDA is optional through the suggested torch package
 URL: https://github.com/lorismichel/drf

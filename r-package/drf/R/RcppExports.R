@@ -25,8 +25,16 @@ gini_train <- function(train_matrix, sparse_train_matrix, outcome_index, sample_
     .Call('_drf_gini_train', PACKAGE = 'drf', train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, node_scaling)
 }
 
-fourier_train <- function(train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, node_scaling) {
-    .Call('_drf_fourier_train', PACKAGE = 'drf', train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, node_scaling)
+fourier_train <- function(train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, kernel, rff_seed, node_scaling) {
+    .Call('_drf_fourier_train', PACKAGE = 'drf', train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, kernel, rff_seed, node_scaling)
+}
+
+compute_rff_cpp <- function(response, frequencies, num_threads) {
+    .Call('_drf_compute_rff_cpp', PACKAGE = 'drf', response, frequencies, num_threads)
+}
+
+sdrf_train <- function(train_matrix, sparse_train_matrix, outcome_index, mtry, num_trees, min_obs, q, lambda_max, max_depth, psu_ids, inclusion_probabilities, resampling_multipliers, num_threads, seed, rff_features) {
+    .Call('_drf_sdrf_train', PACKAGE = 'drf', train_matrix, sparse_train_matrix, outcome_index, mtry, num_trees, min_obs, q, lambda_max, max_depth, psu_ids, inclusion_probabilities, resampling_multipliers, num_threads, seed, rff_features)
 }
 
 regression_predict <- function(forest_object, train_matrix, sparse_train_matrix, outcome_index, test_matrix, sparse_test_matrix, num_threads, estimate_variance) {

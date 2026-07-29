@@ -36,7 +36,9 @@ public:
        const std::vector<size_t>& split_vars,
        const std::vector<double>& split_values,
        const std::vector<size_t>& drawn_samples,
-       const PredictionValues& prediction_values);
+         const PredictionValues& prediction_values,
+         const std::vector<std::vector<double>>& leaf_sample_weights =
+           std::vector<std::vector<double>>());
 
   /**
    * Given test data and a list of sample IDs, recurses down the tree to find
@@ -94,6 +96,12 @@ public:
   const std::vector<std::vector<size_t>>& get_leaf_samples() const;
 
   /**
+   * Survey estimation masses aligned element-for-element with leaf_samples.
+   * Legacy DRF trees leave this vector empty and retain equal leaf weights.
+   */
+  const std::vector<std::vector<double>>& get_leaf_sample_weights() const;
+
+  /**
    * For each split, the ID of the variable that was chosen to split on.
    */
   const std::vector<size_t>& get_split_vars() const;
@@ -128,6 +136,9 @@ public:
    */
   void set_leaf_samples(const std::vector<std::vector<size_t>>& leaf_samples);
 
+  void set_leaf_sample_weights(
+      const std::vector<std::vector<double>>& leaf_sample_weights);
+
   /**
    * Sets the contents of this tree's prediction values. Please see
    * Tree::get_prediction_values for a description of this variable.
@@ -143,6 +154,7 @@ private:
   size_t root_node;
   std::vector<std::vector<size_t>> child_nodes;
   std::vector<std::vector<size_t>> leaf_samples;
+  std::vector<std::vector<double>> leaf_sample_weights;
   std::vector<size_t> split_vars;
   std::vector<double> split_values;
 

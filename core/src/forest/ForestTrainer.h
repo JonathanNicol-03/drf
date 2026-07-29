@@ -52,7 +52,8 @@ private:
 
   std::unique_ptr<Tree> train_tree(const Data& data,
                                    RandomSampler& sampler,
-                                   const ForestOptions& options) const;
+                                   const ForestOptions& options,
+                                   size_t tree_index) const;
 
   std::vector<std::unique_ptr<Tree>> train_ci_group(const Data& data,
                                                     RandomSampler& sampler,

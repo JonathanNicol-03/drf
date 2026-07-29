@@ -18,6 +18,7 @@
 #ifndef DRF_FORESTOPTIONS_H
 #define DRF_FORESTOPTIONS_H
 
+#include <limits>
 
 #include "commons/globals.h"
 #include "sampling/SamplingOptions.h"
@@ -43,7 +44,13 @@ public:
                 uint samples_per_cluster,
                 size_t num_features,
                 double bandwidth,
-                unsigned int node_scaling);
+                unsigned int node_scaling,
+                bool survey_mode = false,
+                double honesty_probability = 0.5,
+                uint min_obs = 1,
+                double max_weight_ratio =
+                  std::numeric_limits<double>::infinity(),
+                uint max_depth = 0);
 
   static uint validate_num_threads(uint num_threads);
 

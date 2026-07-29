@@ -114,8 +114,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fourier_train
-Rcpp::List fourier_train(Rcpp::NumericMatrix train_matrix, Eigen::SparseMatrix<double> sparse_train_matrix, std::vector<size_t> outcome_index, size_t sample_weight_index, bool use_sample_weights, unsigned int mtry, unsigned int num_trees, unsigned int min_node_size, double sample_fraction, bool honesty, double honesty_fraction, bool honesty_prune_leaves, size_t ci_group_size, double alpha, double imbalance_penalty, std::vector<size_t> clusters, unsigned int samples_per_cluster, bool compute_oob_predictions, unsigned int num_threads, unsigned int seed, size_t num_features, double bandwidth, unsigned int node_scaling);
-RcppExport SEXP _drf_fourier_train(SEXP train_matrixSEXP, SEXP sparse_train_matrixSEXP, SEXP outcome_indexSEXP, SEXP sample_weight_indexSEXP, SEXP use_sample_weightsSEXP, SEXP mtrySEXP, SEXP num_treesSEXP, SEXP min_node_sizeSEXP, SEXP sample_fractionSEXP, SEXP honestySEXP, SEXP honesty_fractionSEXP, SEXP honesty_prune_leavesSEXP, SEXP ci_group_sizeSEXP, SEXP alphaSEXP, SEXP imbalance_penaltySEXP, SEXP clustersSEXP, SEXP samples_per_clusterSEXP, SEXP compute_oob_predictionsSEXP, SEXP num_threadsSEXP, SEXP seedSEXP, SEXP num_featuresSEXP, SEXP bandwidthSEXP, SEXP node_scalingSEXP) {
+Rcpp::List fourier_train(Rcpp::NumericMatrix train_matrix, Eigen::SparseMatrix<double> sparse_train_matrix, std::vector<size_t> outcome_index, size_t sample_weight_index, bool use_sample_weights, unsigned int mtry, unsigned int num_trees, unsigned int min_node_size, double sample_fraction, bool honesty, double honesty_fraction, bool honesty_prune_leaves, size_t ci_group_size, double alpha, double imbalance_penalty, std::vector<size_t> clusters, unsigned int samples_per_cluster, bool compute_oob_predictions, unsigned int num_threads, unsigned int seed, size_t num_features, double bandwidth, std::string kernel, unsigned int rff_seed, unsigned int node_scaling);
+RcppExport SEXP _drf_fourier_train(SEXP train_matrixSEXP, SEXP sparse_train_matrixSEXP, SEXP outcome_indexSEXP, SEXP sample_weight_indexSEXP, SEXP use_sample_weightsSEXP, SEXP mtrySEXP, SEXP num_treesSEXP, SEXP min_node_sizeSEXP, SEXP sample_fractionSEXP, SEXP honestySEXP, SEXP honesty_fractionSEXP, SEXP honesty_prune_leavesSEXP, SEXP ci_group_sizeSEXP, SEXP alphaSEXP, SEXP imbalance_penaltySEXP, SEXP clustersSEXP, SEXP samples_per_clusterSEXP, SEXP compute_oob_predictionsSEXP, SEXP num_threadsSEXP, SEXP seedSEXP, SEXP num_featuresSEXP, SEXP bandwidthSEXP, SEXP kernelSEXP, SEXP rff_seedSEXP, SEXP node_scalingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -141,8 +141,48 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< size_t >::type num_features(num_featuresSEXP);
     Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
+    Rcpp::traits::input_parameter< std::string >::type kernel(kernelSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type rff_seed(rff_seedSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type node_scaling(node_scalingSEXP);
-    rcpp_result_gen = Rcpp::wrap(fourier_train(train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, node_scaling));
+    rcpp_result_gen = Rcpp::wrap(fourier_train(train_matrix, sparse_train_matrix, outcome_index, sample_weight_index, use_sample_weights, mtry, num_trees, min_node_size, sample_fraction, honesty, honesty_fraction, honesty_prune_leaves, ci_group_size, alpha, imbalance_penalty, clusters, samples_per_cluster, compute_oob_predictions, num_threads, seed, num_features, bandwidth, kernel, rff_seed, node_scaling));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_rff_cpp
+Rcpp::NumericMatrix compute_rff_cpp(Rcpp::NumericMatrix response, Rcpp::NumericMatrix frequencies, unsigned int num_threads);
+RcppExport SEXP _drf_compute_rff_cpp(SEXP responseSEXP, SEXP frequenciesSEXP, SEXP num_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type response(responseSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type frequencies(frequenciesSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type num_threads(num_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_rff_cpp(response, frequencies, num_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sdrf_train
+Rcpp::List sdrf_train(Rcpp::NumericMatrix train_matrix, Eigen::SparseMatrix<double> sparse_train_matrix, std::vector<size_t> outcome_index, unsigned int mtry, unsigned int num_trees, unsigned int min_obs, double q, double lambda_max, unsigned int max_depth, std::vector<size_t> psu_ids, std::vector<double> inclusion_probabilities, Rcpp::NumericMatrix resampling_multipliers, unsigned int num_threads, unsigned int seed, Rcpp::NumericMatrix rff_features);
+RcppExport SEXP _drf_sdrf_train(SEXP train_matrixSEXP, SEXP sparse_train_matrixSEXP, SEXP outcome_indexSEXP, SEXP mtrySEXP, SEXP num_treesSEXP, SEXP min_obsSEXP, SEXP qSEXP, SEXP lambda_maxSEXP, SEXP max_depthSEXP, SEXP psu_idsSEXP, SEXP inclusion_probabilitiesSEXP, SEXP resampling_multipliersSEXP, SEXP num_threadsSEXP, SEXP seedSEXP, SEXP rff_featuresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type train_matrix(train_matrixSEXP);
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type sparse_train_matrix(sparse_train_matrixSEXP);
+    Rcpp::traits::input_parameter< std::vector<size_t> >::type outcome_index(outcome_indexSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type mtry(mtrySEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type num_trees(num_treesSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type min_obs(min_obsSEXP);
+    Rcpp::traits::input_parameter< double >::type q(qSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda_max(lambda_maxSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type max_depth(max_depthSEXP);
+    Rcpp::traits::input_parameter< std::vector<size_t> >::type psu_ids(psu_idsSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type inclusion_probabilities(inclusion_probabilitiesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type resampling_multipliers(resampling_multipliersSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type num_threads(num_threadsSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type rff_features(rff_featuresSEXP);
+    rcpp_result_gen = Rcpp::wrap(sdrf_train(train_matrix, sparse_train_matrix, outcome_index, mtry, num_trees, min_obs, q, lambda_max, max_depth, psu_ids, inclusion_probabilities, resampling_multipliers, num_threads, seed, rff_features));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -188,7 +228,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_drf_compute_weights_uncertainty", (DL_FUNC) &_drf_compute_weights_uncertainty, 6},
     {"_drf_merge", (DL_FUNC) &_drf_merge, 1},
     {"_drf_gini_train", (DL_FUNC) &_drf_gini_train, 23},
-    {"_drf_fourier_train", (DL_FUNC) &_drf_fourier_train, 23},
+    {"_drf_fourier_train", (DL_FUNC) &_drf_fourier_train, 25},
+    {"_drf_compute_rff_cpp", (DL_FUNC) &_drf_compute_rff_cpp, 3},
+    {"_drf_sdrf_train", (DL_FUNC) &_drf_sdrf_train, 15},
     {"_drf_regression_predict", (DL_FUNC) &_drf_regression_predict, 8},
     {"_drf_regression_predict_oob", (DL_FUNC) &_drf_regression_predict_oob, 6},
     {NULL, NULL, 0}

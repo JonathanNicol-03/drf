@@ -27,10 +27,16 @@ namespace drf {
 class SplittingRule {
 public:
   virtual ~SplittingRule() {}
+
+  virtual bool requires_relabeling() const {
+    return true;
+  }
+
   virtual bool find_best_split(const Data& data,
                                size_t node,
                                const std::vector<size_t>& possible_split_vars,
                                std::vector<std::vector<double>>& responses_by_sample, // std::vector<double> -> std::vector<std::vector<double>> 
+                               const std::vector<double>& sample_weights,
                                const std::vector<std::vector<size_t>>& samples,
                                std::vector<size_t>& split_vars,
                                std::vector<double>& split_values) = 0;

@@ -22,14 +22,11 @@ namespace drf {
 
 std::unique_ptr<SplittingRule> FourierSplittingRuleFactory::create(const Data& data,
                                                                       const TreeOptions& options) const {
-  return std::unique_ptr<SplittingRule>(new FourierSplittingRule(
-      data.get_max_num_unique_values(),
-      options.get_alpha(),
-      options.get_imbalance_penalty(),
-      data.get_outcome_index().size(),
-      options.get_num_features(),
-      options.get_bandwidth(),
-      options.get_node_scaling()));
+    (void) data;
+    return std::unique_ptr<SplittingRule>(
+        new FourierSplittingRule(options.get_alpha(),
+                                         options.get_min_obs(),
+                                         options.get_max_weight_ratio()));
 }
 
 } // namespace drf

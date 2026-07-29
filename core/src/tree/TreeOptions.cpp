@@ -17,6 +17,9 @@
 
 #include "tree/TreeOptions.h"
 
+#include <cmath>
+#include <stdexcept>
+
 namespace drf {
 
 TreeOptions::TreeOptions(uint mtry,
@@ -28,7 +31,12 @@ TreeOptions::TreeOptions(uint mtry,
                          double imbalance_penalty,
                          size_t num_features,
                          double bandwidth,
-                         unsigned int node_scaling):
+                         unsigned int node_scaling,
+                         bool survey_mode,
+                         double honesty_probability,
+                         uint min_obs,
+                         double max_weight_ratio,
+                         uint max_depth):
   mtry(mtry),
   min_node_size(min_node_size),
   honesty(honesty),
@@ -38,7 +46,26 @@ TreeOptions::TreeOptions(uint mtry,
   imbalance_penalty(imbalance_penalty),
   num_features(num_features),
   bandwidth(bandwidth),
-  node_scaling(node_scaling){}
+  node_scaling(node_scaling),
+  survey_mode(survey_mode),
+  honesty_probability(honesty_probability),
+  min_obs(min_obs),
+  max_weight_ratio(max_weight_ratio),
+  max_depth(max_depth) {
+  if (survey_mode &&
+      (!std::isfinite(honesty_probability) || honesty_probability <= 0.0 ||
+       honesty_probability >= 1.0)) {
+    throw std::invalid_argument("SDRF q must lie strictly between 0 and 1.");
+  }
+  if (survey_mode && min_obs == 0) {
+    throw std::invalid_argument("SDRF min_obs must be greater than zero.");
+  }
+  if (survey_mode &&
+      (std::isnan(max_weight_ratio) || max_weight_ratio < 1.0)) {
+    throw std::invalid_argument(
+        "SDRF lambda_max must be at least 1 (or positive infinity). ");
+  }
+}
 
 uint TreeOptions::get_mtry() const {
   return mtry;
@@ -78,6 +105,26 @@ double TreeOptions::get_bandwidth() const {
 
 unsigned int TreeOptions::get_node_scaling() const {
   return node_scaling;
+}
+
+bool TreeOptions::is_survey_mode() const {
+  return survey_mode;
+}
+
+double TreeOptions::get_honesty_probability() const {
+  return honesty_probability;
+}
+
+uint TreeOptions::get_min_obs() const {
+  return min_obs;
+}
+
+double TreeOptions::get_max_weight_ratio() const {
+  return max_weight_ratio;
+}
+
+uint TreeOptions::get_max_depth() const {
+  return max_depth;
 }
 
 } // namespace drf

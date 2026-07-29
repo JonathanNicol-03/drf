@@ -230,4 +230,9 @@ size_t RandomSampler::sample_poisson(size_t mean) {
   return distribution(random_number_generator);
 }
 
+bool RandomSampler::sample_bernoulli(double probability) {
+  std::bernoulli_distribution distribution(probability);
+  return distribution(random_number_generator);
+}
+
 } // namespace drf

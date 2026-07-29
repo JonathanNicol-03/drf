@@ -36,6 +36,7 @@ public:
 
 private:
   void add_sample_weights(const std::vector<size_t>& samples,
+                          const std::vector<double>& sample_masses,
                           std::unordered_map<size_t, double>& weights_by_sample) const;
 
   void normalize_sample_weights(std::unordered_map<size_t, double>& weights_by_sample) const;

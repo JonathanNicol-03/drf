@@ -16,12 +16,14 @@
 #-------------------------------------------------------------------------------*/
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
 #include <sstream>
 
 #include "Data.h"
+#include "kernel/RandomFourierFeatures.h"
 
 namespace drf {
 
@@ -33,7 +35,12 @@ Data::Data() :
     outcome_index(),
     treatment_index(),
     instrument_index(),
-    weight_index() {}
+    weight_index(),
+    rff_features(),
+    inclusion_probabilities(),
+    psu_ids(),
+    resampling_multipliers(),
+    num_resampling_trees(0) {}
 
 bool Data::load_from_file(const std::string& filename) {
   bool result;
@@ -261,6 +268,87 @@ const std::set<size_t>& Data::get_disallowed_split_variables() const {
 
 std::vector<size_t> Data::get_outcome_index() const {
   return outcome_index;
+}
+
+void Data::set_rff_features(
+    const std::shared_ptr<const RandomFourierFeatures>& features) {
+  if (!features) {
+    throw std::invalid_argument("RFF features cannot be null.");
+  }
+  if (features->get_num_rows() != num_rows) {
+    throw std::invalid_argument(
+        "RFF projection row count must match the training data.");
+  }
+  rff_features = features;
+}
+
+bool Data::has_rff_features() const {
+  return static_cast<bool>(rff_features);
+}
+
+const RandomFourierFeatures& Data::get_rff_features() const {
+  if (!rff_features) {
+    throw std::logic_error(
+        "Random Fourier features were not initialized before tree training.");
+  }
+  return *rff_features;
+}
+
+void Data::set_survey_data(
+    const std::vector<double>& probabilities,
+    const std::vector<size_t>& psus,
+    const std::vector<double>& multipliers,
+    size_t multiplier_trees) {
+  if (probabilities.size() != num_rows || psus.size() != num_rows) {
+    throw std::invalid_argument(
+        "pi and psu_id must have one value per training row.");
+  }
+  if (multiplier_trees == 0 ||
+      multipliers.size() != num_rows * multiplier_trees) {
+    throw std::invalid_argument(
+        "Resampling multipliers must be an n by B matrix.");
+  }
+  for (double probability : probabilities) {
+    if (!std::isfinite(probability) || probability <= 0.0 ||
+        probability > 1.0) {
+      throw std::invalid_argument(
+          "Every first-order inclusion probability must be in (0, 1].");
+    }
+  }
+  for (double multiplier : multipliers) {
+    if (!std::isfinite(multiplier) || multiplier < 0.0) {
+      throw std::invalid_argument(
+          "Resampling multipliers must be finite and nonnegative.");
+    }
+  }
+
+  inclusion_probabilities = probabilities;
+  psu_ids = psus;
+  resampling_multipliers = multipliers;
+  num_resampling_trees = multiplier_trees;
+}
+
+bool Data::has_survey_data() const {
+  return !inclusion_probabilities.empty();
+}
+
+double Data::get_inclusion_probability(size_t row) const {
+  return inclusion_probabilities.at(row);
+}
+
+size_t Data::get_psu_id(size_t row) const {
+  return psu_ids.at(row);
+}
+
+double Data::get_resampling_multiplier(size_t row, size_t tree) const {
+  if (tree >= num_resampling_trees) {
+    throw std::out_of_range("No resampling multipliers exist for this tree.");
+  }
+  return resampling_multipliers[tree * num_rows + row];
+}
+
+size_t Data::get_num_resampling_trees() const {
+  return num_resampling_trees;
 }
 
 

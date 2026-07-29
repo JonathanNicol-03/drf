@@ -19,6 +19,7 @@
 #define DRF_DATA_H_
 
 #include <iostream>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -26,6 +27,8 @@
 #include "optional/optional.hpp"
 
 namespace drf {
+
+class RandomFourierFeatures;
 
 class Data {
 public:
@@ -81,6 +84,38 @@ public:
   
   std::vector<size_t> get_outcome_index() const;
 
+  /**
+   * Attach the response projection computed once for this training window.
+   * A shared immutable object is used because ForestTrainer passes the same
+   * Data instance to all tree-building threads.
+   */
+  void set_rff_features(
+      const std::shared_ptr<const RandomFourierFeatures>& rff_features);
+
+  bool has_rff_features() const;
+
+  const RandomFourierFeatures& get_rff_features() const;
+
+  /**
+   * Store survey design inputs in row order. Resampling multipliers are
+   * tree-major: multiplier[tree * num_rows + row]. Keeping them on Data makes
+   * the potentially large n x B allocation shared by all training threads.
+   */
+  void set_survey_data(const std::vector<double>& inclusion_probabilities,
+                       const std::vector<size_t>& psu_ids,
+                       const std::vector<double>& resampling_multipliers,
+                       size_t num_resampling_trees);
+
+  bool has_survey_data() const;
+
+  double get_inclusion_probability(size_t row) const;
+
+  size_t get_psu_id(size_t row) const;
+
+  double get_resampling_multiplier(size_t row, size_t tree) const;
+
+  size_t get_num_resampling_trees() const;
+
 protected:
   size_t num_rows;
   size_t num_cols;
@@ -94,6 +129,11 @@ protected:
   nonstd::optional<size_t> treatment_index;
   nonstd::optional<size_t> instrument_index;
   nonstd::optional<size_t> weight_index;
+  std::shared_ptr<const RandomFourierFeatures> rff_features;
+  std::vector<double> inclusion_probabilities;
+  std::vector<size_t> psu_ids;
+  std::vector<double> resampling_multipliers;
+  size_t num_resampling_trees;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(Data);

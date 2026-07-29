@@ -38,7 +38,12 @@ public:
               double imbalance_penalty,
               size_t num_features,
               double bandwidth,
-              unsigned int node_scaling);
+              unsigned int node_scaling,
+              bool survey_mode,
+              double honesty_probability,
+              uint min_obs,
+              double max_weight_ratio,
+              uint max_depth);
 
   uint get_mtry() const;
   uint get_min_node_size() const;
@@ -70,6 +75,11 @@ public:
   size_t get_num_features() const;
   double get_bandwidth() const;
   unsigned int get_node_scaling() const;
+  bool is_survey_mode() const;
+  double get_honesty_probability() const;
+  uint get_min_obs() const;
+  double get_max_weight_ratio() const;
+  uint get_max_depth() const;
 
 private:
   uint mtry;
@@ -82,6 +92,11 @@ private:
   size_t num_features;
   double bandwidth;
   unsigned int node_scaling;
+  bool survey_mode;
+  double honesty_probability;
+  uint min_obs;
+  double max_weight_ratio;
+  uint max_depth;
 };
 
 } // namespace drf

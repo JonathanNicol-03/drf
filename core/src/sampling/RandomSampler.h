@@ -103,6 +103,8 @@ public:
 
   size_t sample_poisson(size_t mean);
 
+  bool sample_bernoulli(double probability);
+
 private:
  /**
   * Create numbers from 0 to n_all-1, then shuffle and select the first 'size' elements.

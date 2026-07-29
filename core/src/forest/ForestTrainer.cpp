@@ -53,9 +53,20 @@ std::vector<std::unique_ptr<Tree>> ForestTrainer::train_trees(const Data& data,
   const TreeOptions& tree_options = options.get_tree_options();
   bool honesty = tree_options.get_honesty();
   double honesty_fraction = tree_options.get_honesty_fraction();
-  if ((size_t) num_samples * options.get_sample_fraction() < 1) {
+  if (tree_options.is_survey_mode() && !data.has_survey_data()) {
+    throw std::runtime_error(
+        "SDRF training requires survey design data and multipliers.");
+  }
+  if (tree_options.is_survey_mode() &&
+      data.get_num_resampling_trees() < num_trees) {
+    throw std::runtime_error(
+        "The multiplier matrix has fewer columns than the number of trees.");
+  }
+  if (!tree_options.is_survey_mode() &&
+      (size_t) num_samples * options.get_sample_fraction() < 1) {
     throw std::runtime_error("The sample fraction is too small, as no observations will be sampled.");
-  } else if (honesty && ((size_t) num_samples * options.get_sample_fraction() * honesty_fraction < 1
+  } else if (!tree_options.is_survey_mode() && honesty &&
+             ((size_t) num_samples * options.get_sample_fraction() * honesty_fraction < 1
              || (size_t) num_samples * options.get_sample_fraction() * (1-honesty_fraction) < 1)) {
     throw std::runtime_error("The honesty fraction is too close to 1 or 0, as no observations will be sampled.");
   }
@@ -111,7 +122,10 @@ std::vector<std::unique_ptr<Tree>> ForestTrainer::train_batch(
     RandomSampler sampler(tree_seed, options.get_sampling_options());
 
     if (ci_group_size == 1) {
-      std::unique_ptr<Tree> tree = train_tree(data, sampler, options);
+      std::unique_ptr<Tree> tree = train_tree(data,
+                                              sampler,
+                                              options,
+                                              start + i);
       trees.push_back(std::move(tree));
     } else {
       std::vector<std::unique_ptr<Tree>> group = train_ci_group(data, sampler, options);
@@ -124,7 +138,15 @@ std::vector<std::unique_ptr<Tree>> ForestTrainer::train_batch(
 }
 std::unique_ptr<Tree> ForestTrainer::train_tree(const Data& data,
                                                 RandomSampler& sampler,
-                                                const ForestOptions& options) const {
+                                                const ForestOptions& options,
+                                                size_t tree_index) const {
+  if (options.get_tree_options().is_survey_mode()) {
+    return tree_trainer.train_survey(data,
+                                     sampler,
+                                     tree_index,
+                                     options.get_tree_options());
+  }
+
   std::vector<size_t> clusters;
   sampler.sample_clusters(data.get_num_rows(), options.get_sample_fraction(), clusters);
   return tree_trainer.train(data, sampler, clusters, options.get_tree_options());
