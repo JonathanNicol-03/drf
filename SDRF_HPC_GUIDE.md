@@ -92,20 +92,29 @@ for projections, multiplier matrices, forests, and prediction artifacts.
 
 ### 3.1 Create an environment
 
-Package names and available R versions can change. The following is a template:
+Package names and available R versions can change. Create this environment on
+an allocated compute node; do not copy or clone an environment from another
+machine. The following is a template:
 
 ```bash
-module load anaconda
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
 
-conda create -p "$HOME/conda-envs/sdrf" -c conda-forge \
+conda create --strict-channel-priority -p "$HOME/conda-envs/sdrf-hypatia" \
+  -c conda-forge \
   r-base=4.4 r-rcpp r-rcppeigen r-matrix r-fastdummies r-transport \
   r-devtools r-roxygen2 r-testthat make gxx_linux-64
 
-conda activate "$HOME/conda-envs/sdrf"
+conda activate "$HOME/conda-envs/sdrf-hypatia"
+unset R_LIBS
+export R_LIBS_USER="$CONDA_PREFIX/lib/R/library"
+install -d -m 700 "/sharedscratch/$USER/tmp"
+export TMPDIR="/sharedscratch/$USER/tmp"
 ```
 
-If Hypatia uses a different Anaconda module name, inspect `module avail`. Do not
-install or compile on a busy login node when the site asks for a debug job.
+If Miniconda is initialized elsewhere, source that installation's `conda.sh`.
+Do not install or compile on a busy login node when the site asks for a debug
+job. Preserve any copied environment for diagnosis, but do not use it to build
+or validate this package.
 
 ### 3.2 Optional Zen 4 optimization
 
@@ -132,22 +141,27 @@ Git symlinks under `r-package/drf/src` connect the R package to `bindings` and
 `core/src`. Clone or transfer the repository in a way that preserves symlinks.
 
 ```bash
-cd "$HOME/src/drf/r-package"
-Rscript build_package.R
+cd "$HOME/src/drf-clean/r-package"
+Rscript --vanilla -e 'roxygen2::roxygenise("drf"); Rcpp::compileAttributes("drf")'
+R CMD build drf
+R CMD INSTALL --preclean drf_1.4.0.tar.gz
 
-# Explicit test command after installation:
-Rscript -e 'testthat::test_package("drf")'
+# Focused regression tests against the installed package.
+Rscript --vanilla -e 'library(drf); testthat::test_file("drf/tests/testthat/test-drf-options.R")'
+Rscript --vanilla -e 'library(drf); testthat::test_file("drf/tests/testthat/test-sdrf-rff.R")'
+Rscript --vanilla -e 'library(drf); testthat::test_file("drf/tests/testthat/test-sdrf.R")'
+
+# Full package tests and source-package check.
+Rscript --vanilla -e 'testthat::test_package("drf")'
+R CMD check --no-manual drf_1.4.0.tar.gz
 ```
 
-The build script runs roxygen and `Rcpp::compileAttributes()`, so generated
-`NAMESPACE`, `man/*.Rd`, and Rcpp registration should match the source. For a
-manual build:
-
-```bash
-cd "$HOME/src/drf/r-package"
-Rscript -e 'roxygen2::roxygenise("drf"); Rcpp::compileAttributes("drf")'
-R CMD INSTALL drf
-```
+This workflow invokes roxygen and `Rcpp::compileAttributes()` directly, so
+generated `NAMESPACE`, `man/*.Rd`, and Rcpp registration match the source. It
+deliberately avoids `build_package.R`: `devtools::install()` can delegate to a
+private `pak` library, which is unsafe when that library came from a copied
+environment with a newer glibc ABI. A completed `R CMD INSTALL` recompiles
+`drf.so` for the current Hypatia node.
 
 ### 3.4 Optional CUDA projection
 
@@ -515,7 +529,7 @@ representative window and use elapsed time, peak RSS, and throughput to choose.
 
 set -euo pipefail
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
-conda activate "$HOME/conda-envs/sdrf"
+conda activate "$HOME/conda-envs/sdrf-hypatia"
 
 export OMP_NUM_THREADS=1
 Rscript "$HOME/project/precompute_windows.R"
@@ -541,7 +555,7 @@ still determine the winner.
 
 set -euo pipefail
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
-conda activate "$HOME/conda-envs/sdrf"
+conda activate "$HOME/conda-envs/sdrf-hypatia"
 
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1

@@ -43,8 +43,9 @@
 #' @param seed The seed of the C++ random number generator.
 #' @param compute.variable.importance boolean, should the variable importance be computed in the object.
 #' @param ci.group.size The forest will grow ci.group.size trees on each subsample. 
-#' In order to provide confidence intervals, ci.group.size must be at least 2. 
-#' Defaults to \code{num.trees/30} which yields 30 CI groups.
+#' A group size of 1 is valid for point-estimate and smoke-test forests. In order
+#' to provide grouped uncertainty estimates, ci.group.size must be at least 2.
+#' Defaults to \code{max(1, num.trees/30)}, rounded down, which targets 30 CI groups.
 #' 
 #' @seealso See \code{\link{predict.drf}} for how to make predictions, including uncertainty weights.
 #'
@@ -130,9 +131,10 @@ drf <-               function(X, Y,
                               num.threads = NULL,
                               seed = stats::runif(1, 0, .Machine$integer.max),
                               compute.variable.importance = FALSE,
-                              ci.group.size = as.integer(num.trees / 30)) {
+                              ci.group.size = max(1L, as.integer(num.trees / 30))) {
   
-  
+  validate_drf_positive_whole_number(num.trees, "num.trees")
+  validate_drf_positive_whole_number(ci.group.size, "ci.group.size")
   
   # Convert plain data to data.frame - before any input validation or processing.
   # Don't convert to matrix because matrix has to be numeric.
@@ -274,4 +276,14 @@ drf <-               function(X, Y,
   }
   
   forest
+}
+
+validate_drf_positive_whole_number <- function(value, name) {
+  if (length(value) != 1L || !is.numeric(value) || is.na(value) ||
+      !is.finite(value) || value <= 0 || value != floor(value) ||
+      value > .Machine$integer.max) {
+    stop(name, " must be one finite positive whole number no greater than ",
+         .Machine$integer.max, ".")
+  }
+  invisible(value)
 }

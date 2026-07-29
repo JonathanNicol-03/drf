@@ -154,8 +154,9 @@ replacement.
 
 ### CI-group qualification
 
-The checked-in R default is `ci.group.size = as.integer(num.trees / 30)`, so the
-default path usually calls
+The checked-in R default is
+`ci.group.size = max(1L, as.integer(num.trees / 30))`, so forests with at least
+60 requested trees usually call
 [`train_ci_group`](../core/src/forest/ForestTrainer.cpp#L133-L150). In that path:
 
 1. one initial cluster subsample is drawn for the whole group;
@@ -981,7 +982,7 @@ checkout.
 | Fourier feature count `B` | 20 | R `num.features = 10` |
 | Response scaling | Enabled for tree building | R `response.scaling = TRUE`; unscaled `Y.orig` retained |
 | Gaussian bandwidth | Median heuristic | R computes it before calling C++; see caveat below |
-| CI grouping | Not part of Algorithm 1 | R default `ci.group.size = as.integer(num.trees / 30)` |
+| CI grouping | Not part of Algorithm 1 | R default `ci.group.size = max(1L, as.integer(num.trees / 30))` |
 
 The Python constructor merely stores `fit_params`; it supplies none of these
 defaults itself. Therefore, omitted Python keyword arguments always inherit the
@@ -1023,31 +1024,27 @@ its score, and both child sets. C++ retains only best-so-far scalars and creates
 child vectors only for the winner. This is an optimization, not a mathematical
 change to argmax selection.
 
-## 4. Default CI groups alter the literal per-tree subsampling story
+## 4. CI groups alter the literal per-tree subsampling story
 
 When `ci.group.size > 1`, trees in the same group share an initial subsample.
 This supports grouped uncertainty calculations but is not represented in
 Algorithm 1.
 
-The same grouping code also alters some requested tree counts. `ForestOptions`
-sets
+When the requested count is not a multiple of the group size, `ForestOptions`
+rounds it up using
 
 ```cpp
-num_trees + (num_trees % ci_group_size)
+remainder = num_trees % ci_group_size
+num_trees += ci_group_size - remainder  // only when remainder is nonzero
 ```
 
-even though rounding up to a multiple would require adding
-`ci_group_size - remainder` when the remainder is nonzero. Training then uses
-integer division to obtain the number of complete groups. For the Python README
-example `num_trees = 2000`, R's default group size is `66`; C++ changes the
-internal request to `2020`, trains `2020 / 66 = 30` complete groups, and returns
-`30 * 66 = 1980` trees. The paper's \(N\), requested `num.trees`, internal
-`ForestOptions::num_trees`, and returned forest size are therefore not always
-the same in this revision.
-
-For `num.trees < 30`, R's default `as.integer(num.trees / 30)` is zero. The C++
-constructor then uses that zero as a modulo divisor. Callers must supply a valid
-positive `ci.group.size` in that case.
+Exact multiples remain unchanged. For example, `num.trees = 100` and
+`ci.group.size = 3` produce 102 trees, while `num.trees = 6` and
+`ci.group.size = 3` produce 6. The R interface validates both values as positive
+whole numbers, defaults small forests to group size 1, and the C++ constructor
+independently rejects zero before modulo or division. The paper's \(N\),
+requested `num.trees`, and returned forest size can therefore differ only by
+the documented upward rounding needed to form complete CI groups.
 
 ## 5. Weight normalization is deferred
 

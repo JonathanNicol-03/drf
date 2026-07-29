@@ -39,7 +39,8 @@ test_that("SDRF returns normalized distributions for a bivariate response", {
   expect_s3_class(fit, "sdrf")
   expect_identical(dim(prediction$weights), c(5L, 120L))
   expect_identical(dim(prediction$y), c(120L, 2L))
-  expect_equal(as.numeric(rowSums(prediction$weights)), rep(1, 5),
+  weight.sums <- prediction$weights %*% rep(1, ncol(prediction$weights))
+  expect_equal(as.numeric(weight.sums), rep(1, 5),
                tolerance = 1e-12)
   expect_true(all(prediction$weights >= 0))
 })

@@ -47,7 +47,8 @@ test_that("RFF inner products approximate both configured kernels", {
   gaussian.approximation <- gaussian$features %*% t(gaussian$features)
   squared.distance <- as.matrix(stats::dist(response))^2
   gaussian.exact <- exp(-squared.distance / (2 * bandwidth^2))
-  expect_equal(gaussian.approximation, gaussian.exact, tolerance = 0.035)
+  expect_equal(unname(gaussian.approximation), unname(gaussian.exact),
+               tolerance = 0.035)
 
   laplacian <- sdrf_rff(
     response,
@@ -62,7 +63,8 @@ test_that("RFF inner products approximate both configured kernels", {
   laplacian.approximation <- laplacian$features %*% t(laplacian$features)
   l1.distance <- as.matrix(stats::dist(response, method = "manhattan"))
   laplacian.exact <- exp(-l1.distance / bandwidth)
-  expect_equal(laplacian.approximation, laplacian.exact, tolerance = 0.035)
+  expect_equal(unname(laplacian.approximation), unname(laplacian.exact),
+               tolerance = 0.035)
 })
 
 test_that("windowed RFF preprocessing persists one object at a time", {

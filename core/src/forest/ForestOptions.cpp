@@ -56,6 +56,14 @@ ForestOptions::ForestOptions(uint num_trees,
 
   this->num_threads = validate_num_threads(num_threads);
 
+  if (num_trees == 0) {
+    throw std::runtime_error("num_trees must be positive.");
+  }
+
+  if (ci_group_size == 0) {
+    throw std::runtime_error("ci_group_size must be positive.");
+  }
+
   if (survey_mode && ci_group_size != 1) {
     throw std::runtime_error(
         "SDRF Algorithm 1 requires ci_group_size = 1.");
@@ -63,7 +71,11 @@ ForestOptions::ForestOptions(uint num_trees,
 
   // If necessary, round the number of trees up to a multiple of
   // the confidence interval group size.
-  this->num_trees = num_trees + (num_trees % ci_group_size);
+  size_t remainder = num_trees % ci_group_size;
+  this->num_trees = num_trees;
+  if (remainder != 0) {
+    this->num_trees += ci_group_size - remainder;
+  }
 
   if (ci_group_size > 1 && sample_fraction > 0.5) {
     throw std::runtime_error("When confidence intervals are enabled, the"
